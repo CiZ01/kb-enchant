@@ -13,12 +13,12 @@ static void kb_event__zoom(struct input_dev *input, u8 key_scancode)
     switch (key_scancode)
     {
     case WHEEL_UP:
-        input_event(input, EV_KEY, KEY_ZOOMIN, KEY_ON);
-        input_event(input, EV_KEY, KEY_ZOOMIN, KEY_OFF);
+        input_event(input, EV_KEY, KEY_UP, KEY_ON);
+        input_event(input, EV_KEY, KEY_UP, KEY_OFF);
         break;
     case WHEEL_DOWN:
-        input_event(input, EV_KEY, KEY_ZOOMOUT, KEY_ON);
-        input_event(input, EV_KEY, KEY_ZOOMOUT, KEY_OFF);
+        input_event(input, EV_KEY, KEY_DOWN, KEY_ON);
+        input_event(input, EV_KEY, KEY_DOWN, KEY_OFF);
         break;
     }
 

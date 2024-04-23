@@ -32,13 +32,15 @@ MODULE_VERSION("0.1");
 
 #define is_wheel_key(key) (key == WHEEL_UP || key == WHEEL_DOWN || key == WHEEL_PUSH)
 
-#define HID_CHANGE_MODE _IOR('H', 1, int)
+#define KB_IOCTL_MAGIC 'K'
+#define HID_CHANGE_MODE _IO(KB_IOCTL_MAGIC, 1)
+#define HID_GET_MODE _IOR(KB_IOCTL_MAGIC, 2, int)
 
 static u8 current_mode = 0;
 static int MAJOR_NUM = 0;
 dev_t dev_num;
-static struct cdev *mykb_cdev;
-static struct class *mykb_class;
+static struct cdev mykb_cdev;
+static struct class *kb_ench_class = NULL;
 
 static DEFINE_MUTEX(mutex__current_mode);
 static int set_current_mode(u8 new_mode)
@@ -59,19 +61,37 @@ static int get_current_mode(void)
 
 static long mykb_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
+    int mode;
+
     switch (cmd)
     {
     case HID_CHANGE_MODE:
-        // Handle custom command
-        printk(KERN_INFO "Custom IOCTL command received\n");
+        /// Copia il valore dallo spazio utente
+        if (copy_from_user(&mode, arg, sizeof(int)))
+            return -EFAULT;
+
+        // Utilizza il nuovo valore di modalità
+        set_current_mode((u8)mode);
+
+        printk(KERN_INFO "Custom IOCTL command received. New mode: %d\n", mode);
+        break;
+    case HID_GET_MODE:
+        mode = get_current_mode();
+        /// Copia il valore nello spazio utente
+        if (copy_to_user((int *)arg, &mode, sizeof(int)))
+            return -EFAULT;
+
+        printk(KERN_INFO "Custom IOCTL command received. Current mode: %d\n", mode);
         break;
     default:
+        printk(KERN_INFO "Custom IOCTL command received. Not valid command\n");
         return -ENOTTY; // Not a valid ioctl command
     }
     return 0;
 }
 
 static const struct file_operations mykb_fops = {
+    .owner = THIS_MODULE,
     .unlocked_ioctl = mykb_ioctl,
 };
 
@@ -124,10 +144,17 @@ static int mykb_input_mapping(struct hid_device *hdev, struct hid_input *hi, str
 
 static void mykb_remove(struct hid_device *hdev)
 {
-    class_destroy(mykb_class);
-    cdev_del(mykb_cdev);
-    unregister_chrdev_region(dev_num, 1);
 
+    // ---- CLEANUP CHARDEV ----
+    device_destroy(kb_ench_class, dev_num);
+
+    class_unregister(kb_ench_class);
+    class_destroy(kb_ench_class);
+
+    unregister_chrdev_region(dev_num, 1);
+    cdev_del(&mykb_cdev);
+
+    // ---- CLEANUP HID DEVICE ----
     hid_hw_stop(hdev);
     dev_printk(KERN_INFO, &hdev->dev, "KB-ENCH removed\n");
 }
@@ -137,49 +164,36 @@ static int mykb_probe(struct hid_device *hdev, const struct hid_device_id *id)
     printk("KEYBOARD detected: %x, %s\n", hdev->type, hdev->name);
     int ret;
 
+    //  ---- INIT CHAR DEV FOR IOCTL ----
     ret = alloc_chrdev_region(&dev_num, 0, 1, "mykb-cdev");
     if (ret < 0)
     {
         printk(KERN_ERR "failed to alloc chrdev region\n");
         return ret;
     }
-    mykb_cdev = cdev_alloc();
-    if (!mykb_cdev)
+
+    kb_ench_class = class_create("kb_ench");
+    if (IS_ERR(kb_ench_class))
     {
-        ret = -ENOMEM;
-        printk(KERN_ERR "failed to alloc cdev\n");
+        printk(KERN_ERR "failed to create class\n");
         unregister_chrdev_region(dev_num, 1);
-        return ret;
+        return PTR_ERR(kb_ench_class);
     }
-    cdev_init(mykb_cdev, &mykb_fops);
-    ret = cdev_add(mykb_cdev, dev_num, 1);
+
+    cdev_init(&mykb_cdev, &mykb_fops);
+    mykb_cdev.owner = THIS_MODULE;
+    ret = cdev_add(&mykb_cdev, dev_num, 1);
     if (ret < 0)
     {
         printk(KERN_ERR "failed to add cdev\n");
         unregister_chrdev_region(dev_num, 1);
         return ret;
     }
-    mykb_class = class_create("kb_ench_class");
-    if (!mykb_class)
-    {
-        ret = -EEXIST;
-        printk(KERN_ERR "failed to create class\n");
-        cdev_del(mykb_cdev);
-        unregister_chrdev_region(dev_num, 1);
-        return ret;
-    }
-    if (!device_create(mykb_class, NULL, dev_num, NULL, "mykb_cdev%d", MINOR(dev_num)))
-    {
-        ret = -EINVAL;
-        printk(KERN_ERR "failed to create device\n");
-        class_destroy(mykb_class);
-        cdev_del(mykb_cdev);
-        unregister_chrdev_region(dev_num, 1);
-        return ret;
-    }
 
+    device_create(kb_ench_class, NULL, dev_num, NULL, "kb-ench", MINOR(dev_num));
+
+    // ---- INIT HID DEVICE ----
     ret = hid_parse(hdev);
-
     if (ret)
     {
         hid_err(hdev, "Error parsing Compaq Internet Keyboard\n");

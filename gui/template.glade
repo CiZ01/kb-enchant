@@ -2,14 +2,19 @@
 <!-- Generated with glade 3.40.0 -->
 <interface>
   <requires lib="gtk+" version="3.24"/>
+  <!-- interface-local-resource-path /home/cizzo/Pubblici/kb-enchant/gui/icons -->
+  <!-- interface-css-provider-path style.css -->
   <object class="GtkWindow" id="overlay_window">
     <property name="can-focus">False</property>
+    <property name="opacity">0.69999999999999996</property>
     <property name="resizable">False</property>
     <property name="window-position">center</property>
     <property name="default-width">500</property>
     <property name="default-height">150</property>
     <property name="skip-taskbar-hint">True</property>
     <property name="urgency-hint">True</property>
+    <property name="decorated">False</property>
+    <property name="deletable">False</property>
     <signal name="destroy" handler="onDestroy" swapped="no"/>
     <signal name="focus-out-event" handler="onFocusOutEvent" swapped="no"/>
     <child>
@@ -19,13 +24,25 @@
         <property name="homogeneous">True</property>
         <child>
           <object class="GtkButton" id="__volume">
-            <property name="label" translatable="yes">VOLUME</property>
-            <property name="name">volume_selector</property>
+            <property name="name">volume_mode</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
             <property name="relief">none</property>
             <signal name="clicked" handler="setMode" swapped="no"/>
+            <child>
+              <object class="GtkImage" id="image2">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <property name="pixel-size">120</property>
+                <property name="icon-name">volume-level-high</property>
+              </object>
+            </child>
+            <style>
+              <class name="button"/>
+            </style>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -35,12 +52,24 @@
         </child>
         <child>
           <object class="GtkButton" id="__brightness">
-            <property name="label" translatable="yes">LUMINOSITÀ</property>
-            <property name="name">brightness_selector</property>
+            <property name="name">brightness_mode</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
             <property name="relief">none</property>
+            <signal name="clicked" handler="setMode" swapped="no"/>
+            <child>
+              <object class="GtkImage" id="image1">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="opacity">0.80</property>
+                <property name="pixel-size">90</property>
+                <property name="icon-name">brightness-display-symbolic</property>
+              </object>
+            </child>
+            <style>
+              <class name="button"/>
+            </style>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -49,12 +78,25 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton">
-            <property name="label" translatable="yes">VOID</property>
+          <object class="GtkButton" id="__scroll">
+            <property name="name">scroll_mode</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <property name="receives-default">True</property>
             <property name="relief">none</property>
+            <signal name="clicked" handler="setMode" swapped="no"/>
+            <child>
+              <object class="GtkImage" id="image3">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="opacity">0.80</property>
+                <property name="pixel-size">120</property>
+                <property name="icon-name">transform-move-vertical</property>
+              </object>
+            </child>
+            <style>
+              <class name="button"/>
+            </style>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -64,5 +106,8 @@
         </child>
       </object>
     </child>
+    <style>
+      <class name="main"/>
+    </style>
   </object>
 </interface>

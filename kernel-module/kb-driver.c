@@ -33,7 +33,7 @@ MODULE_VERSION("0.1");
 #define is_wheel_key(key) (key == WHEEL_UP || key == WHEEL_DOWN || key == WHEEL_PUSH)
 
 #define KB_IOCTL_MAGIC 'K'
-#define HID_CHANGE_MODE _IO(KB_IOCTL_MAGIC, 1)
+#define HID_SET_MODE _IOW(KB_IOCTL_MAGIC, 1, int)
 #define HID_GET_MODE _IOR(KB_IOCTL_MAGIC, 2, int)
 
 static u8 current_mode = 0;
@@ -65,7 +65,7 @@ static long mykb_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
     switch (cmd)
     {
-    case HID_CHANGE_MODE:
+    case HID_SET_MODE:
         /// Copia il valore dallo spazio utente
         if (copy_from_user(&mode, arg, sizeof(int)))
             return -EFAULT;
@@ -73,7 +73,7 @@ static long mykb_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         // Utilizza il nuovo valore di modalità
         set_current_mode((u8)mode);
 
-        printk(KERN_INFO "Custom IOCTL command received. New mode: %d\n", mode);
+        printk(KERN_INFO "Custom IOCTL command received. New mode: %d | %llX\n", mode, HID_SET_MODE);
         break;
     case HID_GET_MODE:
         mode = get_current_mode();
@@ -81,10 +81,11 @@ static long mykb_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
         if (copy_to_user((int *)arg, &mode, sizeof(int)))
             return -EFAULT;
 
-        printk(KERN_INFO "Custom IOCTL command received. Current mode: %d\n", mode);
+        printk(KERN_INFO "Custom IOCTL command received. Current mode: %d | %llx\n", mode, HID_GET_MODE);
         break;
     default:
         printk(KERN_INFO "Custom IOCTL command received. Not valid command\n");
+        printk("== %llx == == %llx\n", HID_SET_MODE, HID_GET_MODE);
         return -ENOTTY; // Not a valid ioctl command
     }
     return 0;
@@ -113,6 +114,9 @@ static int mykb_raw_event(struct hid_device *hdev, struct hid_report *report, u8
     if (key_scancode == WHEEL_PUSH)
     {
         current_mode = (current_mode + 1) % 3;
+        kb_event__change_mode(input);
+        data[1] = 0xff;
+        input_sync(input);
         return 0;
     }
 
@@ -127,6 +131,7 @@ static int mykb_raw_event(struct hid_device *hdev, struct hid_report *report, u8
         kb_event__zoom(input, key_scancode);
         break;
     default:
+        printk(KERN_ERR "Invalid mode: %d\n", current_mode);
         return 0;
     }
 

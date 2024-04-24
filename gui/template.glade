@@ -23,7 +23,7 @@
         <property name="can-focus">False</property>
         <property name="homogeneous">True</property>
         <child>
-          <object class="GtkButton" id="__volume">
+          <object class="GtkButton" id="volume_mode">
             <property name="name">volume_mode</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
@@ -51,7 +51,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="__brightness">
+          <object class="GtkButton" id="brightness_mode">
             <property name="name">brightness_mode</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>
@@ -78,7 +78,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkButton" id="__scroll">
+          <object class="GtkButton" id="scroll_mode">
             <property name="name">scroll_mode</property>
             <property name="visible">True</property>
             <property name="can-focus">True</property>

@@ -3,7 +3,6 @@
     color: white;
     font-size: 1.5em;
 
-    border: white 0.1em solid;
     border-radius: 0.1em;
 }
 
@@ -12,8 +11,10 @@
     color: white;
     text-decoration: none;
     font-size: 0.1em;
+
 }
 
 .active{
-    border: white 0.1em solid;
+        border: white 0.5em solid;
+
 }

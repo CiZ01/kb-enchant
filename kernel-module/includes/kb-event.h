@@ -42,4 +42,11 @@ static void kb_event__brightness(struct input_dev *input, u8 key_scancode)
     return;
 }
 
+static void kb_event__change_mode(struct input_dev *input)
+{
+    input_event(input, EV_KEY, KEY_MODE, KEY_ON);
+    input_event(input, EV_KEY, KEY_MODE, KEY_OFF);
+    return;
+}
+
 #endif // __KB_EVENT_H__

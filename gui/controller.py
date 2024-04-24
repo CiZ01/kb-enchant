@@ -5,21 +5,23 @@ This module is the controller.....
 import os
 import fcntl
 import ctypes as ct
+from enum import Enum
 
 # ---- IOCTL COMMANDS ----
-KB_IOCTL_MAGIC = "K"
-HID_CHANGE_MODE = ord("K") << 8 | 1
-HID_GET_MODE = ord("K") << 8 | 2
+HID_CHANGE_MODE = 0x40044B01
+HID_GET_MODE = 0x80044B02
 
 
 # ------------------------
 
 # ---- MODES ----
-MODES = {
-    "volume_mode": 0,
-    "brightness_mode": 1,
-    "scroll_mode": 2,
-}
+
+MODES = ("volume_mode", "brightness_mode", "scroll_mode")
+
+
+def getModeByName(mode: str):
+    return MODES.index(mode)
+
 
 # ------------------------
 
@@ -35,7 +37,7 @@ class KBController:
 
     def set_mode(self, mode: str):
         try:
-            new_mode = MODES[mode]
+            new_mode = getModeByName(mode)
             fcntl.ioctl(self.device_file, HID_CHANGE_MODE, ct.c_int(new_mode))
             return True
         except Exception as e:
@@ -43,7 +45,13 @@ class KBController:
             return False
 
     def get_mode(self):
-        pass
+        try:
+            mode = ct.c_int()
+            fcntl.ioctl(self.device_file, HID_GET_MODE, mode)
+            return mode.value
+        except Exception as e:
+            print(e)
+            return None
 
     def __del__(self):
         if self.device_file:

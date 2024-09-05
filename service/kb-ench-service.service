@@ -1,0 +1,11 @@
+[Unit]
+Description=My GUI Service for Keyboard Mode Control, set /sys/class/kb_ench/mode writable
+Before=graphical.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/bin/bash -c "/bin/chmod a+w /sys/class/kb_ench/mode"
+
+[Install]
+WantedBy=multi-user.target

@@ -9,8 +9,8 @@
 
 #include "kb-event.h"
 
-#define EXPAND_TO_8_BYTES(hex)                                                                                         \
-    ((unsigned char[]){(hex >> 56) & 0xFF, (hex >> 48) & 0xFF, (hex >> 40) & 0xFF, (hex >> 32) & 0xFF,                 \
+#define EXPAND_TO_8_BYTES(hex)                                                                         \
+    ((unsigned char[]){(hex >> 56) & 0xFF, (hex >> 48) & 0xFF, (hex >> 40) & 0xFF, (hex >> 32) & 0xFF, \
                        (hex >> 24) & 0xFF, (hex >> 16) & 0xFF, (hex >> 8) & 0xFF, hex & 0xFF})
 
 MODULE_LICENSE("GPL");
@@ -26,8 +26,8 @@ MODULE_VERSION("0.1");
 
 #define map_key_clear(c) hid_map_usage_clear(hi, usage, bit, max, EV_KEY, (c))
 
-#define send_null_key(data)                                                                                            \
-    data[1] = 0;                                                                                                       \
+#define send_null_key(data) \
+    data[1] = 0;            \
     hid_report_raw_event(hdev, HID_INPUT_REPORT, data, size, 0)
 
 #define is_wheel_key(key) (key == WHEEL_UP || key == WHEEL_DOWN || key == WHEEL_PUSH)
@@ -36,64 +36,47 @@ MODULE_VERSION("0.1");
 #define HID_SET_MODE _IOW(KB_IOCTL_MAGIC, 1, int)
 #define HID_GET_MODE _IOR(KB_IOCTL_MAGIC, 2, int)
 
-static u8 current_mode = 0;
 static int MAJOR_NUM = 0;
 dev_t dev_num;
 static struct cdev mykb_cdev;
 static struct class *kb_ench_class = NULL;
 
+static u8 current_mode = 0;
 static DEFINE_MUTEX(mutex__current_mode);
-static int set_current_mode(u8 new_mode)
+static ssize_t mode_show(const struct class *class, const struct class_attribute *attr, char *buf)
 {
+    ssize_t ret;
     mutex_lock(&mutex__current_mode);
-    current_mode = new_mode;
+    ret = sprintf(buf, "%u\n", current_mode);
     mutex_unlock(&mutex__current_mode);
-    return 0;
+    return ret;
 }
 
-static int get_current_mode(void)
+static ssize_t mode_store(const struct class *class, const struct class_attribute *attr, const char *buf, size_t count)
 {
-    mutex_lock(&mutex__current_mode);
-    int mode = current_mode;
-    mutex_unlock(&mutex__current_mode);
-    return mode;
-}
-
-static long mykb_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
-{
-    int mode;
-
-    switch (cmd)
+    int new_mode;
+    if (kstrtoint(buf, 10, &new_mode))
     {
-    case HID_SET_MODE:
-        /// Copia il valore dallo spazio utente
-        if (copy_from_user(&mode, arg, sizeof(int)))
-            return -EFAULT;
-
-        // Utilizza il nuovo valore di modalità
-        set_current_mode((u8)mode);
-
-        printk(KERN_INFO "Custom IOCTL command received. New mode: %d | %llX\n", mode, HID_SET_MODE);
-        break;
-    case HID_GET_MODE:
-        mode = get_current_mode();
-        /// Copia il valore nello spazio utente
-        if (copy_to_user((int *)arg, &mode, sizeof(int)))
-            return -EFAULT;
-
-        printk(KERN_INFO "Custom IOCTL command received. Current mode: %d | %llx\n", mode, HID_GET_MODE);
-        break;
-    default:
-        printk(KERN_INFO "Custom IOCTL command received. Not valid command\n");
-        printk("== %llx == == %llx\n", HID_SET_MODE, HID_GET_MODE);
-        return -ENOTTY; // Not a valid ioctl command
+        return -EINVAL;
     }
-    return 0;
+
+    if (new_mode < 0 || new_mode > 2)
+    {
+        return -EINVAL;
+    }
+
+    mutex_lock(&mutex__current_mode);
+    current_mode = (u8)new_mode;
+    mutex_unlock(&mutex__current_mode);
+    printk(KERN_INFO "Mode changed to %d\n", current_mode);
+
+    return count;
 }
+
+CLASS_ATTR_RW(mode);
 
 static const struct file_operations mykb_fops = {
     .owner = THIS_MODULE,
-    .unlocked_ioctl = mykb_ioctl,
 };
 
 static int mykb_raw_event(struct hid_device *hdev, struct hid_report *report, u8 *data, int size)
@@ -150,14 +133,9 @@ static int mykb_input_mapping(struct hid_device *hdev, struct hid_input *hi, str
 static void mykb_remove(struct hid_device *hdev)
 {
 
-    // ---- CLEANUP CHARDEV ----
-    device_destroy(kb_ench_class, dev_num);
-
-    class_unregister(kb_ench_class);
+    // ---- CLEANUP SYSFS ATTRIBUTE ----
+    class_remove_file(kb_ench_class, &class_attr_mode);
     class_destroy(kb_ench_class);
-
-    unregister_chrdev_region(dev_num, 1);
-    cdev_del(&mykb_cdev);
 
     // ---- CLEANUP HID DEVICE ----
     hid_hw_stop(hdev);
@@ -169,33 +147,21 @@ static int mykb_probe(struct hid_device *hdev, const struct hid_device_id *id)
     printk("KEYBOARD detected: %x, %s\n", hdev->type, hdev->name);
     int ret;
 
-    //  ---- INIT CHAR DEV FOR IOCTL ----
-    ret = alloc_chrdev_region(&dev_num, 0, 1, "mykb-cdev");
-    if (ret < 0)
-    {
-        printk(KERN_ERR "failed to alloc chrdev region\n");
-        return ret;
-    }
-
+    //  ---- INIT SYSFS ATTRIBUTE ----
     kb_ench_class = class_create("kb_ench");
     if (IS_ERR(kb_ench_class))
     {
         printk(KERN_ERR "failed to create class\n");
-        unregister_chrdev_region(dev_num, 1);
         return PTR_ERR(kb_ench_class);
     }
 
-    cdev_init(&mykb_cdev, &mykb_fops);
-    mykb_cdev.owner = THIS_MODULE;
-    ret = cdev_add(&mykb_cdev, dev_num, 1);
-    if (ret < 0)
+    ret = class_create_file(kb_ench_class, &class_attr_mode);
+    if (ret)
     {
-        printk(KERN_ERR "failed to add cdev\n");
-        unregister_chrdev_region(dev_num, 1);
+        printk(KERN_ERR "failed to create mode attribute\n");
+        class_destroy(kb_ench_class);
         return ret;
     }
-
-    device_create(kb_ench_class, NULL, dev_num, NULL, "kb-ench", MINOR(dev_num));
 
     // ---- INIT HID DEVICE ----
     ret = hid_parse(hdev);

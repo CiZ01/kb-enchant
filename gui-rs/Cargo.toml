@@ -1,0 +1,10 @@
+[package]
+name = "gui-rs"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+dirs = "5.0.1"
+glib = { version = "0.20.2", features = ["log", "log_macros"] }
+gtk = { version = "0.18.1", features = ["v3_24"] }

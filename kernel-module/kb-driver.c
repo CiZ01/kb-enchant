@@ -32,9 +32,6 @@ MODULE_VERSION("0.1");
 
 #define is_wheel_key(key) (key == WHEEL_UP || key == WHEEL_DOWN || key == WHEEL_PUSH)
 
-#define KB_IOCTL_MAGIC 'K'
-#define HID_SET_MODE _IOW(KB_IOCTL_MAGIC, 1, int)
-#define HID_GET_MODE _IOR(KB_IOCTL_MAGIC, 2, int)
 
 static int MAJOR_NUM = 0;
 dev_t dev_num;

@@ -4,7 +4,9 @@ HEADERS := $(wildcard $(INCLUDES_DIR)/*.h)
 
 EXTRA_CFLAGS += -I/$(PWD)/$(INCLUDES_DIR)
 
-all:
+.PHONY: build clean load unload reload
+
+build:
 	@echo "Building driver..."
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules 
 	
@@ -15,10 +17,10 @@ clean:
 
 load:
 	sudo insmod $(obj-m:.o=.ko)
-	#./close.sh
 
 unload:
-	rmmod $(obj-m:.o=.ko)
+	sudo rmmod $(obj-m:.o=.ko)
+
 reload:
 	sudo rmmod $(obj-m:.o=.ko)
 	sudo insmod $(obj-m:.o=.ko)

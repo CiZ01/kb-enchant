@@ -84,7 +84,6 @@ pub fn build_ui(app: &Application) {
 }
 
 const CSS_PATH: &str = "/.config/kb-ench/theme.css";
-
 /*
  * Load the CSS file and add it to the provider
  * Add the provider to the default screen

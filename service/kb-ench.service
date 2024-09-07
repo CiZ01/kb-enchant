@@ -7,5 +7,8 @@ Type=oneshot
 User=root
 ExecStart=/bin/bash -c "/bin/chmod a+w /sys/class/kb_ench/mode"
 
+Restart=on-failure  
+RestartSec=10    
+
 [Install]
 WantedBy=multi-user.target

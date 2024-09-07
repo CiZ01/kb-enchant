@@ -3,7 +3,7 @@ use gtk::Application;
 mod gui;
 use std::fs;
 
-const APP_ID: &str = "org.cizzo.kb-bench-gui";
+const APP_ID: &str = "org.cizzo.kb-ench-gui";
 const MODULE_NAME: &str = "kb_driver";
 
 fn main() -> gtk::glib::ExitCode {

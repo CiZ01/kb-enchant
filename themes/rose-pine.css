@@ -1,0 +1,77 @@
+/* Rose Pine-inspired Overlay CSS for GTK3 */
+
+/* Main window styling */
+window {
+    background-color: #191724;
+    /* Dark background */
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    /* Deeper shadow */
+    border: 2px solid #c4a7e7;
+    /* Glowing border effect */
+    background-clip: padding-box;
+    transition: border-color 0.3s ease;
+}
+
+/* Button styling */
+button {
+    background-color: #26233a;
+    /* Subdued button background */
+    color: #e0def4;
+    /* Light text color */
+    border: 2px solid #c4a7e7;
+    /* Matching border */
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 16px;
+    margin: 5px;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #403d52;
+    /* Darker tone on hover */
+    border-color: #eb6f92;
+    /* Change to a brighter accent on hover */
+}
+
+button:active {
+    background-color: #6e6a86;
+    /* Softer active state */
+    border-color: #e0def4;
+    /* Light border when active */
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    /* Inner shadow for pressed look */
+}
+
+/* Icon styling inside the button */
+button>image,
+button>icon {
+    padding: 5px;
+    max-width: 24px;
+    max-height: 24px;
+}
+
+/* Text styling for button or overlay elements */
+label,
+button>label {
+    font-family: "Fira Code", "Monospace";
+    color: #e0def4;
+    /* Light text */
+    font-weight: bold;
+}
+
+/* Styling for active focus elements */
+button:focus {
+    border-color: #c4a7e7;
+    /* Glowing accent when focused */
+    outline: none;
+}
+
+/* For all border effects, create a soft outer glow */
+window,
+button {
+    box-shadow: 0 0 8px rgba(196, 167, 231, 0.5);
+    /* Soft glowing effect */
+}
